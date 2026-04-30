@@ -1,0 +1,1362 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  LayoutDashboard, 
+  Target, 
+  BookOpen, 
+  Map, 
+  ChevronUp, 
+  ChevronDown, 
+  CheckCircle2, 
+  AlertCircle,
+  Menu,
+  X,
+  Hexagon,
+  ArrowRight,
+  RefreshCw,
+  Save,
+  Edit3,
+  FileText,
+  Compass,
+  Trophy,
+  MessageSquare,
+  Home,
+  ShieldAlert,
+  DoorOpen,
+  Swords,
+  Mountain,
+  Gem,
+  Flame,
+  Undo2,
+  Sun
+} from 'lucide-react';
+
+// --- Constants & Data ---
+
+const JOURNEY_STEPS = [
+  { id: 1, text: "日常の世界", desc: "主人公の普段の生活、現状の課題が潜む場所" },
+  { id: 2, text: "冒険へのいざない", desc: "問題を解決するため、現状を変えるための呼びかけ" },
+  { id: 3, text: "冒険への拒絶", desc: "変化に対する不安や恐れからの拒絶・躊躇" },
+  { id: 4, text: "賢者との出会い", desc: "助言や気づきを与えるメンター・師との出会い" },
+  { id: 5, text: "第一関門突破", desc: "決意を固め、未知の世界・新しい取り組みへの一歩を踏み出す" },
+  { id: 6, text: "試練、仲間、敵", desc: "困難を乗り越え、チームの結束を高め、課題を明確にする" },
+  { id: 7, text: "最も危険な場所への接近", desc: "プロジェクトの核心、最も困難な課題へと近づく" },
+  { id: 8, text: "最大の試練", desc: "組織としての生死をかけた挑戦や最大の危機" },
+  { id: 9, text: "報酬", desc: "最大の試練を乗り越え、得られた成果や新しいスキル" },
+  { id: 10, text: "帰路", desc: "得た成果を定着させるため、日常の業務・世界へ戻るプロセス" },
+  { id: 11, text: "復活", desc: "最後の試練。メンバーの最終的な変化と成長の証明" },
+  { id: 12, text: "宝を持っての帰還", desc: "成長したチームが組織全体に新しい価値（宝）をもたらす" },
+];
+
+const QUIZ_QUESTIONS = [
+  {
+    question: "組織マネジメントにおいて、「教えること」の究極のゴールはどれでしょうか？",
+    options: [
+      "部下がマニュアル通りに、一糸乱れず動くようになること",
+      "部下が自立し、自ら考えて行動・判断できるようになること",
+      "部下の業務上のミスを完全にゼロにすること",
+      "上司の指示がなくても、上司と全く同じやり方で作業すること"
+    ],
+    correctAnswer: 1,
+    explanation: "教えることの真の目的は、依存させることではなく「自立」させることです。メンバーが自ら考え、行動できる組織こそが強いチームとなります。"
+  },
+  {
+    question: "OGSMフレームワークにおいて、「M（Measurement）」が意味するものはどれでしょうか？",
+    options: [
+      "Mission（組織の使命や存在意義）",
+      "Management（チームの管理体制）",
+      "Measurement（戦略の進捗を測るための具体的な評価基準・数値）",
+      "Mindset（メンバーが持つべき心構え）"
+    ],
+    correctAnswer: 2,
+    explanation: "Measurement（評価基準）は、Strategy（戦略）が正しく実行されているか、Goal（目標）に近づいているかを客観的に測るための指標です。"
+  },
+  {
+    question: "ヒーローズ・ジャーニー理論を組織マネジメントに活用する最大のメリットはどれでしょうか？",
+    options: [
+      "顧客やメンバーの深い共感を生み、強力なファンや強固な絆を作ることができる",
+      "業務プロセスを完全に自動化し、人件費を大幅に削減することができる",
+      "競合他社のマーケティング戦略を数値的に完全に分析・予測できる",
+      "従業員の給与体系を論理的に決定することができる"
+    ],
+    correctAnswer: 0,
+    explanation: "ヒーローズ・ジャーニーは人間の心理に深く響くストーリーの型です。これを共有することで、メンバー同士の共感やビジョンへの強い求心力が生まれます。"
+  },
+  {
+    question: "OGSMの「O（Objective）」の特徴として正しいものはどれでしょうか？",
+    options: [
+      "定量的で期限が明確な数値目標である",
+      "私たちは何のために存在し、何を成し遂げたいのかという定性的な方向性である",
+      "現場の具体的な作業手順を記したマニュアルである",
+      "競合他社との市場シェアの差を表す指標である"
+    ],
+    correctAnswer: 1,
+    explanation: "Objective（目的）は組織の存在意義や方向性を示す定性的なものです。定量的なものは次のGoal（目標）で設定します。"
+  },
+  {
+    question: "OGSMの「G（Goal）」を設定する上で最も重要な要素はどれでしょうか？",
+    options: [
+      "抽象的で壮大なビジョンを描くこと",
+      "測定不可能で、従業員の想像力に任せること",
+      "定量的（数値）であり、Objective（目的）を達成したか判断できること",
+      "過去の成功体験のみを基準に設定すること"
+    ],
+    correctAnswer: 2,
+    explanation: "Goal（目標）はObjectiveを具体化したものであり、達成したかどうかを客観的に判断できる定量的な数値（期限、金額、件数など）である必要があります。"
+  },
+  {
+    question: "OGSMの「S（Strategy）」とは何を指すでしょうか？",
+    options: [
+      "目標を達成するための、リソース（ヒト・モノ・カネ）の選択と集中",
+      "従業員の毎日の出退勤時間の管理方法",
+      "顧客からのクレーム対応の具体的なトークスクリプト",
+      "会社設立時の定款の内容"
+    ],
+    correctAnswer: 0,
+    explanation: "Strategy（戦略）は、限られたリソースをどこに集中させれば最も効果的にGoalを達成できるかという「やり方・道筋」を示します。"
+  },
+  {
+    question: "教える技術における基本ステップ「やってみせ、言って聞かせて、させてみせ…」の最後に来る行動はどれでしょうか？",
+    options: [
+      "ほめてやらねば、人は動かじ",
+      "叱ってやらねば、人は育たじ",
+      "放置してやらねば、自立はせじ",
+      "給料を上げねば、人は動かじ"
+    ],
+    correctAnswer: 0,
+    explanation: "山本五十六の格言の通り、実践させた後には承認（ほめること・認めること）が不可欠であり、これが部下の自信と成長につながります。"
+  },
+  {
+    question: "ヒーローズ・ジャーニーの第1ステップ「日常の世界」がビジネスにおいて表すものは何でしょうか？",
+    options: [
+      "プロジェクトが大成功した後の安定した状態",
+      "顧客や自社が現在抱えている「解決前の課題や不満」が潜む現状",
+      "競合他社が倒産した直後の市場環境",
+      "新商品のリリース発表会見の場"
+    ],
+    correctAnswer: 1,
+    explanation: "物語は常に、課題や満たされない思いが潜む「日常」から始まります。ビジネスでも現状の課題認識がスタート地点です。"
+  },
+  {
+    question: "ヒーローズ・ジャーニーにおける「賢者との出会い」は、組織においてどのような役割でしょうか？",
+    options: [
+      "組織に新しいITシステムを導入する業者との契約",
+      "助言や気づきを与え、新しい取り組みへの背中を押すメンターや上司との関わり",
+      "組織の不正を内部告発する人物の出現",
+      "競合企業の社長との直接対決"
+    ],
+    correctAnswer: 1,
+    explanation: "賢者（メンター）は主人公に武器や知恵を与えます。組織マネジメントにおいては、部下の成長を促す上司やコーチがこの役割を担います。"
+  },
+  {
+    question: "ヒーローズ・ジャーニーの「最大の試練」を乗り越えた後に得られる「報酬」とは、組織にとって何を意味するでしょうか？",
+    options: [
+      "従業員への金銭的なボーナスのみ",
+      "最大の危機を乗り越えたことで得られた、新しいスキルやチームの確固たる自信・成果",
+      "競合他社からの事業買収提案",
+      "労働基準監督署からの表彰"
+    ],
+    correctAnswer: 1,
+    explanation: "試練を乗り越えた報酬は、単なる物質的利益だけでなく、組織として獲得したノウハウ、結束力、人間的な成長などの無形資産を含みます。"
+  },
+  {
+    question: "OGSMフレームワークを最初に開発し、実践し始めたことで知られる企業はどこでしょうか？",
+    options: [
+      "Google",
+      "Apple",
+      "P&G（プロクター・アンド・ギャンブル）",
+      "トヨタ自動車"
+    ],
+    correctAnswer: 2,
+    explanation: "OGSMはP&Gによって開発・実践され、その効果の高さから世界中の企業で導入されるようになったマネジメント手法です。"
+  },
+  {
+    question: "チームビルディングにおいて、OGSMを導入する主な目的は何でしょうか？",
+    options: [
+      "メンバー間の雑談を増やすため",
+      "組織の目的から評価基準までを一貫して言語化し、全員のベクトルを合わせるため",
+      "従業員の勤務時間を正確に記録・監視するため",
+      "経費削減のためのペーパーレス化を推進するため"
+    ],
+    correctAnswer: 1,
+    explanation: "OGSMは目的から行動レベルまでが一枚にまとまるため、チーム全員が「なぜこれをするのか」を理解し、同じ方向を向くための強力なツールとなります。"
+  },
+  {
+    question: "「教える」プロセスにおいて、部下がミスをした際の適切なフィードバック方法はどれでしょうか？",
+    options: [
+      "他のメンバーの前で厳しく叱責する",
+      "ミスを無視して、良いところだけを褒め続ける",
+      "行動（プロセス）のどこに原因があったのかを一緒に振り返り、改善策を考えさせる",
+      "直ちにその業務の担当から外す"
+    ],
+    correctAnswer: 2,
+    explanation: "ミスは成長の機会です。人格を否定するのではなく、行動やプロセスに焦点を当て、自ら気づき改善できるように導くことが重要です。"
+  },
+  {
+    question: "ヒーローズ・ジャーニーの「帰路」のフェーズがビジネスで意味するものはどれでしょうか？",
+    options: [
+      "プロジェクトが失敗し、会社を畳むこと",
+      "得た成果や新しいスキルを、日常の業務や組織全体に定着させていくプロセス",
+      "社員旅行の帰り道での反省会",
+      "顧客からの契約キャンセルの手続き"
+    ],
+    correctAnswer: 1,
+    explanation: "冒険で得た変化（報酬）を、元の日常の世界に持ち帰り、標準化・仕組み化していくプロセスが「帰路」に該当します。"
+  },
+  {
+    question: "OGSMの「Goal」と「Measurement」の違いとして正しいものはどれでしょうか？",
+    options: [
+      "Goalは定性的、Measurementは定量的な指標である",
+      "Goalは長期的な組織の目標数値、Measurementは戦略(Strategy)が実行されているかを測る具体的な進捗指標",
+      "Goalは個人目標、Measurementはチーム目標である",
+      "両者に違いはなく、全く同じ意味の言葉である"
+    ],
+    correctAnswer: 1,
+    explanation: "Goalが「最終的にどこに辿り着くか」を示す数値であるのに対し、Measurementは「選んだ戦略（道筋）を正しく進めているか」を測る道標となる数値です。"
+  },
+  {
+    question: "ヒーローズ・ジャーニーの「冒険への拒絶」とは、メンバーのどのような心理状態を表しているでしょうか？",
+    options: [
+      "新しいプロジェクトに対するワクワク感",
+      "変化に対する不安や恐れからの躊躇・抵抗感",
+      "給与に対する不満",
+      "上司に対する絶対的な服従心"
+    ],
+    correctAnswer: 1,
+    explanation: "新しい挑戦や変化には必ず不安が伴います。この抵抗感（冒険への拒絶）を理解し、寄り添うことがマネジメントにおいて不可欠です。"
+  },
+  {
+    question: "教える際に「マニュアル」を活用する最大の目的は何でしょうか？",
+    options: [
+      "業務の属人化を防ぎ、誰でも一定の品質で業務を再現できるようにするため",
+      "上司が直接指導する手間を完全に省くため",
+      "マニュアルを読むことで従業員の読解力をテストするため",
+      "会社の書類の量を増やして見栄えを良くするため"
+    ],
+    correctAnswer: 0,
+    explanation: "マニュアルは業務の標準化のためのツールです。これがあることで、教える側と教えられる側の認識のズレを防ぐことができます。"
+  },
+  {
+    question: "ヒーローズ・ジャーニーの最終ステップ「宝を持っての帰還」が意味するものはどれでしょうか？",
+    options: [
+      "出張先からお土産を買って帰ること",
+      "成長したチームやメンバーが、組織全体や顧客に対して新しい価値（宝）を提供すること",
+      "会社の利益をすべて従業員に還元すること",
+      "競合の機密情報を盗み出すこと"
+    ],
+    correctAnswer: 1,
+    explanation: "主人公（メンバー）の成長という内面的な変化が、組織の業績向上や顧客満足といった外面的な価値（宝）となって還元される状態です。"
+  },
+  {
+    question: "OGSMの「Strategy（戦略）」において、「選択と集中」が重要とされる理由は何でしょうか？",
+    options: [
+      "全ての業務を均等に行うと従業員が退屈するから",
+      "経営資源（ヒト・モノ・カネ・時間）には限りがあり、最も効果的な場所にリソースを投下する必要があるから",
+      "会社の予算を余らせるため",
+      "競合他社と全く同じ戦略を取るため"
+    ],
+    correctAnswer: 1,
+    explanation: "「何をやるか」と同じくらい「何をやらないか」を決めることが戦略の要です。リソースを分散させず、一点突破を図るために選択と集中が必要です。"
+  },
+  {
+    question: "マネジメントにおいて、メンバーの「自立」を促すための効果的な関わり方はどれでしょうか？",
+    options: [
+      "答えをすぐに教えず、「あなたはどう思う？」と問いかけ、考えさせること",
+      "業務のやり方を1から100まで細かく指示し、逸脱を許さないこと",
+      "失敗しないように、難しい仕事はすべて上司が巻き取ること",
+      "放任主義を貫き、一切の相談に乗らないこと"
+    ],
+    correctAnswer: 0,
+    explanation: "ティーチング（教える）だけでなく、コーチング（引き出す）のアプローチを取り入れることで、メンバーは自ら考える力を養うことができます。"
+  },
+  {
+    question: "ヒーローズ・ジャーニーの「試練、仲間、敵」のフェーズで、チームが得るものは何でしょうか？",
+    options: [
+      "組織内の派閥争いの激化",
+      "困難を共に乗り越えることによるチームの結束と、協力者の獲得",
+      "ライバル企業の完全な排除",
+      "無条件の昇給"
+    ],
+    correctAnswer: 1,
+    explanation: "小さな困難（試練）を共有することでメンバー同士の絆が深まり、強固なチームビルディングへと繋がる重要なフェーズです。"
+  },
+  {
+    question: "教える側（メンター）が持つべき最も重要な心構えはどれでしょうか？",
+    options: [
+      "自分の過去の成功体験を絶対に押し付けること",
+      "相手の現状と理解度を把握し、相手のペースに合わせて支援すること",
+      "一度教えたことは二度と質問させないこと",
+      "自分が一番優秀であることを常にアピールすること"
+    ],
+    correctAnswer: 1,
+    explanation: "教える側の自己満足ではなく、相手主体で物事を進める「相手軸」の視点を持つことが、効果的な人材育成の第一歩です。"
+  },
+  {
+    question: "OGSMを組織に浸透させるための効果的な方法はどれでしょうか？",
+    options: [
+      "年に1回だけ全社会議で発表し、あとは触れない",
+      "一部の経営層だけで共有し、一般社員には秘密にする",
+      "作成したOGSMを可視化（ボードなど）し、日常の会議や評価の基準として常に参照する",
+      "OGSMの内容を暗記するまで社員に筆写させる"
+    ],
+    correctAnswer: 2,
+    explanation: "OGSMは作って終わりではありません。常に目に触れる場所に置き、日々の意思決定の判断基準として使い続けることで浸透します。"
+  },
+  {
+    question: "ヒーローズ・ジャーニーをビジネスに応用する際、物語の「主人公」として設定すべきは誰でしょうか？",
+    options: [
+      "自社の社長",
+      "自社の商品・サービス",
+      "顧客、または成長を目指すメンバー自身",
+      "競合他社"
+    ],
+    correctAnswer: 2,
+    explanation: "組織マネジメントにおいては、成長していくメンバー自身を主人公と見立てることで、彼ら自身の当事者意識と共感を引き出すことができます。"
+  },
+  {
+    question: "「最も危険な場所への接近」とは、組織においてどのような状況でしょうか？",
+    options: [
+      "オフィスのセキュリティが破られた状態",
+      "プロジェクトの核心的な課題や、これまで避けてきた根本的な問題に向き合う直前の状態",
+      "労働基準監督署の査察が入る前日",
+      "クレーム対応の電話口"
+    ],
+    correctAnswer: 1,
+    explanation: "大きなブレイクスルーを果たすためには、組織のタブーや最も難易度の高い課題（最も危険な場所）にメスを入れる必要があります。"
+  },
+  {
+    question: "OGSMの「Measurement（評価基準）」に設定すべき指標として適切なものはどれでしょうか？",
+    options: [
+      "気合と根性",
+      "従業員の笑顔の回数",
+      "戦略の進捗が客観的に判断できる具体的なKPIやアクションの完了件数",
+      "毎日の天候"
+    ],
+    correctAnswer: 2,
+    explanation: "誰が見ても達成度合いがわかるよう、数値化された客観的な指標（KPI: 重要業績評価指標）を設定することがMeasurementの要件です。"
+  },
+  {
+    question: "ヒーローズ・ジャーニーの「第一関門突破」は、プロジェクトにおけるどの段階に該当するでしょうか？",
+    options: [
+      "プロジェクトが完了し、解散する段階",
+      "計画段階を終え、決意を固めて実際に行動（実行）を移し始めた段階",
+      "プロジェクトの予算を申請する段階",
+      "失敗の言い訳を考える段階"
+    ],
+    correctAnswer: 1,
+    explanation: "日常（計画・検討）から非日常（実行・挑戦）へと一歩を踏み出し、後戻りできない決断をした瞬間が「第一関門突破」です。"
+  },
+  {
+    question: "部下のモチベーションを高めるために、マネージャーが行うべきコミュニケーションはどれでしょうか？",
+    options: [
+      "欠点ばかりを指摘し、危機感を煽る",
+      "業務の背景や「なぜこれをやるのか（Why）」の意義を伝え、貢献を認める",
+      "自分の武勇伝をひたすら語る",
+      "プライベートな問題に過度に干渉する"
+    ],
+    correctAnswer: 1,
+    explanation: "人は意味（Why）を感じ、自分の貢献が認められることで内発的な動機づけ（モチベーション）が高まります。"
+  },
+  {
+    question: "ヒーローズ・ジャーニーの「冒険へのいざない」とはビジネスにおいて何に該当するでしょうか？",
+    options: [
+      "会社を辞めることの推奨",
+      "新規プロジェクトの立ち上げ、新しい目標の提示、現状を変えるための呼びかけ",
+      "毎年の定期健康診断の案内",
+      "懇親会（飲み会）の出欠確認"
+    ],
+    correctAnswer: 1,
+    explanation: "現状（日常）を打破し、新しい価値を創造するためのキックオフやビジョンの提示が「冒険へのいざない」に当たります。"
+  },
+  {
+    question: "マネジメントの究極の目的として、適切なものはどれでしょうか？",
+    options: [
+      "管理者が一切働かなくても済む組織を作ること",
+      "メンバー一人ひとりの成長を通じて、組織が継続的に成果を出し続ける仕組みを作ること",
+      "競合他社をすべて倒産に追い込むこと",
+      "会社の経費をゼロにすること"
+    ],
+    correctAnswer: 1,
+    explanation: "マネジメントは単なる目標達成の道具ではなく、人材育成を通じて永続的に発展する強い組織を構築するための根幹となる活動です。"
+  }
+];
+
+// --- Helper Functions ---
+const shuffleArray = (array) => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
+
+// --- Components ---
+
+// オフホワイト基調の洗練されたカードコンポーネント（縁を2px確保してレイアウトシフトを防ぐ）
+const Card = ({ children, className = "", onClick }) => (
+  <div 
+    onClick={onClick}
+    className={`bg-white border-2 border-zinc-200/60 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden transition-all duration-300 ${className}`}
+  >
+    {children}
+  </div>
+);
+
+// エレガントなボタンコンポーネント
+const Button = ({ children, onClick, variant = 'primary', className = "", disabled = false }) => {
+  const baseStyle = "px-6 py-3.5 rounded-full font-medium tracking-wide transition-all duration-500 flex items-center justify-center gap-2 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed";
+  const variants = {
+    primary: "bg-[#C5A059] hover:bg-[#b08d48] text-white shadow-[0_4px_20px_rgba(197,160,89,0.3)] hover:shadow-[0_4px_25px_rgba(197,160,89,0.4)]",
+    secondary: "bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 shadow-sm",
+    outline: "bg-transparent border border-[#C5A059]/40 hover:border-[#C5A059] text-[#C5A059] hover:bg-[#C5A059]/5"
+  };
+  
+  return (
+    <button onClick={onClick} className={`${baseStyle} ${variants[variant]} ${className}`} disabled={disabled}>
+      {children}
+    </button>
+  );
+};
+
+// --- Main App Component ---
+
+export default function App() {
+  const [currentTab, setCurrentTab] = useState('home');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  const [ogsmData, setOgsmData] = useState({
+    objective: "",
+    goal: "",
+    strategy: "",
+    measure: ""
+  });
+
+  const navigateTo = (tab) => {
+    setCurrentTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setIsMobileMenuOpen(false);
+  };
+
+  const menuItems = [
+    { id: 'home', icon: LayoutDashboard, label: 'ホーム' },
+    { id: 'manual', icon: FileText, label: '手順書' },
+    { id: 'trial', icon: Compass, label: '賢者の試練' },
+    { id: 'ogsm', icon: Target, label: 'OGSMボード' },
+    { id: 'quiz', icon: BookOpen, label: 'クイズ' },
+    { id: 'journey', icon: Map, label: '並べ替え' }
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#FAFAFA] text-zinc-600 font-sans selection:bg-[#C5A059]/20 antialiased overflow-x-hidden">
+      
+      {/* 控えめで上品な背景のグロー効果 */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80vw] h-[50vh] bg-[#C5A059]/[0.03] blur-[120px] rounded-full"></div>
+      </div>
+
+      {/* 黒色の帯・タイトルを大きく表示するヘッダー */}
+      <header className="sticky top-0 z-50 bg-zinc-950 border-b border-zinc-800 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-24 flex items-center justify-between">
+          <div className="flex items-center gap-3 md:gap-5 cursor-pointer group" onClick={() => navigateTo('home')}>
+            <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-700 group-hover:border-[#C5A059]/50 transition-colors duration-500 shadow-sm shrink-0">
+              <Hexagon className="text-[#C5A059] w-7 h-7 stroke-[1.5]" />
+            </div>
+            <div className="flex flex-col md:flex-row md:items-baseline md:gap-3">
+              <h1 className="text-xl md:text-3xl font-bold tracking-wide text-white">
+                HJTメソッド™
+              </h1>
+              <span className="text-sm md:text-xl text-[#C5A059] font-medium tracking-widest">
+                究極マネジメント
+              </span>
+            </div>
+          </div>
+
+          {/* Desktop Nav (画面が広い場合のみ表示) */}
+          <nav className="hidden xl:flex items-center gap-2">
+            {menuItems.map(item => (
+              <button
+                key={item.id}
+                onClick={() => navigateTo(item.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-500 ${
+                  currentTab === item.id 
+                    ? 'bg-[#C5A059] text-white shadow-md' 
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                }`}
+              >
+                {currentTab === item.id && <item.icon className="w-4 h-4" />}
+                {item.label}
+              </button>
+            ))}
+          </nav>
+
+          <button 
+            className="xl:hidden p-2 text-zinc-400 hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
+          </button>
+        </div>
+
+        {/* Mobile Nav */}
+        {isMobileMenuOpen && (
+          <div className="xl:hidden absolute top-24 left-0 w-full bg-zinc-950 border-b border-zinc-800 p-6 flex flex-col gap-4 shadow-2xl">
+            {menuItems.map(item => (
+              <button
+                key={item.id}
+                onClick={() => navigateTo(item.id)}
+                className={`flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-medium transition-colors ${
+                  currentTab === item.id 
+                    ? 'bg-[#C5A059]/20 text-[#C5A059]' 
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                {item.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </header>
+
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-16 relative z-10">
+        {currentTab === 'home' && <HomeView navigateTo={navigateTo} />}
+        {currentTab === 'manual' && <ManualView />}
+        {currentTab === 'ogsm' && <OGSMBoardView ogsmData={ogsmData} setOgsmData={setOgsmData} />}
+        {currentTab === 'quiz' && <QuizView />}
+        {currentTab === 'journey' && <JourneyGameView />}
+        {currentTab === 'trial' && <TrialView navigateTo={navigateTo} setOgsmData={setOgsmData} />}
+      </main>
+    </div>
+  );
+}
+
+// --- View Components ---
+
+function HomeView({ navigateTo }) {
+  return (
+    <div className="space-y-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+      
+      {/* ヒーローセクション */}
+      <section className="text-center max-w-4xl mx-auto py-12">
+        <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-zinc-900 mb-8 leading-[1.3] tracking-wide">
+          メンバーの成長とともに、<br className="hidden md:block" />
+          <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-[#C5A059] to-[#D4B572]">
+            より強い組織
+          </span>を作り上げる。
+        </h2>
+        <p className="text-base md:text-lg text-zinc-500 mb-12 leading-relaxed max-w-2xl mx-auto font-light">
+          若い一人社長の企業で直面する「スタッフが育たない」という課題。<br/>
+          HJTメソッド™とOGSMを組み合わせた究極のマネジメントで、チームビルディングを加速させます。
+        </p>
+      </section>
+
+      {/* ヒーローズ・ジャーニー インフォグラフィック（絵だけで表現） */}
+      <HeroJourneyGraphic />
+
+      {/* 体系的手順書（メイン・中央配置） */}
+      <div className="max-w-3xl mx-auto relative group cursor-pointer" onClick={() => navigateTo('manual')}>
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-[#C5A059]/0 via-[#C5A059]/10 to-[#C5A059]/0 rounded-3xl blur opacity-0 group-hover:opacity-100 transition duration-1000"></div>
+        {/* ホバー時に黒く囲われる設計 (hover:border-zinc-900) */}
+        <Card className="relative p-10 md:p-16 flex flex-col items-center text-center hover:-translate-y-1 hover:border-zinc-900 hover:shadow-xl transition-all duration-300">
+          <div className="w-20 h-20 rounded-full bg-zinc-50 flex items-center justify-center border border-zinc-100 mb-8 group-hover:scale-110 transition-transform duration-700 shadow-sm">
+            <FileText className="w-8 h-8 text-[#C5A059] stroke-[1.5]" />
+          </div>
+          <h3 className="text-2xl md:text-3xl font-medium text-zinc-800 mb-4 tracking-wider">体系的手順書</h3>
+          <p className="text-zinc-500 leading-relaxed mb-8 max-w-xl text-sm md:text-base font-light">
+            マネジメントの本質、教える技術、OGSMの理論を体系的にまとめたドキュメント。チームビルディングのすべての基盤となる知識がここに集約されています。
+          </p>
+          <div className="flex items-center gap-2 text-[#C5A059] text-sm font-medium tracking-widest uppercase">
+            Read Manual <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform duration-500" />
+          </div>
+        </Card>
+      </div>
+
+      {/* 4つの機能（2x2グリッド） */}
+      <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        {[
+          {
+            id: 'trial',
+            title: "賢者の試練",
+            sub: "Story & Trial",
+            desc: "冒険仕立てのストーリーを通じて、マネジメントの本質を自分事として体感する穴埋めワーク。",
+            icon: Compass
+          },
+          {
+            id: 'ogsm',
+            title: "OGSMボード",
+            sub: "Framework",
+            desc: "組織の目的から評価基準までを言語化し、ベクトルを合わせるP&G発祥のフレームワーク。",
+            icon: Target
+          },
+          {
+            id: 'quiz',
+            title: "マネジメントクイズ",
+            sub: "Knowledge",
+            desc: "「教えるとは何か？」マネジメントの基本概念をクイズ形式で確実に定着させます。",
+            icon: BookOpen
+          },
+          {
+            id: 'journey',
+            title: "ヒーローズ・ジャーニー",
+            sub: "12 Steps",
+            desc: "神話の法則を用いた12のステップ。物語の力を通じて、メンバーの共感と成長を促します。",
+            icon: Map
+          }
+        ].map((feature) => (
+          <Card 
+            key={feature.id} 
+            /* ホバー時に黒く囲われる設計 (hover:border-zinc-900) */
+            className="group cursor-pointer hover:border-zinc-900 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+            onClick={() => navigateTo(feature.id)}
+          >
+            <div className="p-8 md:p-10 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-8">
+                <div className="w-14 h-14 rounded-full bg-zinc-50 flex items-center justify-center border border-zinc-100 group-hover:border-[#C5A059]/20 transition-colors duration-500 shadow-sm">
+                  <feature.icon className="w-6 h-6 text-zinc-400 group-hover:text-[#C5A059] transition-colors duration-500 stroke-[1.5]" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-zinc-300 group-hover:text-[#C5A059] group-hover:-rotate-45 transition-all duration-500" />
+              </div>
+              <p className="text-xs text-[#C5A059] font-medium tracking-widest uppercase mb-2">{feature.sub}</p>
+              <h3 className="text-xl font-medium text-zinc-800 mb-4 tracking-wide">{feature.title}</h3>
+              <p className="text-zinc-500 text-sm leading-relaxed flex-grow font-light">
+                {feature.desc}
+              </p>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function HeroJourneyGraphic() {
+  const steps = [
+    { icon: Home, label: "01 日常" },
+    { icon: Compass, label: "02 誘い" }, 
+    { icon: ShieldAlert, label: "03 拒絶" },   
+    { icon: BookOpen, label: "04 賢者" },      
+    { icon: DoorOpen, label: "05 関門" },      
+    { icon: Swords, label: "06 試練" },        
+    { icon: Mountain, label: "07 接近" },      
+    { icon: Flame, label: "08 死闘" },           
+    { icon: Gem, label: "09 報酬" },           
+    { icon: Undo2, label: "10 帰路" },  
+    { icon: Sun, label: "11 復活" },     
+    { icon: Trophy, label: "12 帰還" },         
+  ];
+
+  return (
+    <div className="max-w-5xl mx-auto mb-24 px-4 overflow-x-auto pb-4" style={{ scrollbarWidth: 'none' }}>
+      <div className="min-w-[800px] bg-zinc-950 border border-zinc-800 rounded-[2rem] p-8 md:p-10 shadow-lg flex flex-col relative">
+        
+        {/* アイコン＆ラベル列 */}
+        <div className="relative flex justify-between items-start w-full px-2">
+          {/* 背景の接続線（アイコンの高さの中心に配置） */}
+          <div className="absolute left-6 right-6 top-6 -translate-y-1/2 h-[2px] bg-zinc-800 flex items-center z-0">
+            {/* 未知の世界（試練）のエリアだけ少し色を変えて表現 */}
+            <div className="ml-[33%] w-[42%] h-[2px] bg-[#C5A059]/40"></div>
+          </div>
+
+          {steps.map((step, idx) => {
+            const Icon = step.icon;
+            // ステップ5(idx=4)〜9(idx=8)は未知・試練の世界
+            const isUnderworld = idx >= 4 && idx <= 8; 
+            
+            return (
+              <div key={idx} className="relative z-10 flex flex-col items-center group cursor-default w-12">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-500 bg-zinc-900 shrink-0
+                  ${isUnderworld 
+                    ? 'border-zinc-700 group-hover:border-zinc-500 shadow-inner' 
+                    : 'border-zinc-800 group-hover:border-[#C5A059] group-hover:shadow-[0_4px_15px_rgba(197,160,89,0.2)]'}`}
+                >
+                  <Icon className={`w-5 h-5 transition-colors duration-500 
+                    ${isUnderworld 
+                      ? 'text-zinc-500 group-hover:text-zinc-300' 
+                      : 'text-[#C5A059]/70 group-hover:text-[#C5A059]'}`} 
+                  />
+                </div>
+                <div className="mt-3 text-center text-[10px] font-medium text-zinc-400 whitespace-nowrap">
+                  {step.label}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ManualView() {
+  return (
+    <div className="max-w-3xl mx-auto space-y-16 animate-in fade-in duration-1000">
+      <div className="text-center pb-12 border-b border-zinc-200">
+        <h2 className="text-3xl md:text-4xl font-light text-zinc-900 tracking-widest mb-4">
+          体系的手順書
+        </h2>
+        <p className="text-zinc-400 text-sm tracking-widest uppercase">Methodology & Framework</p>
+      </div>
+
+      <div className="space-y-20 text-zinc-600 font-light leading-loose text-base md:text-lg">
+        
+        <section>
+          <div className="flex items-center gap-4 mb-8">
+            <span className="text-sm font-medium text-[#C5A059] tracking-widest">01</span>
+            <h3 className="text-2xl font-medium text-zinc-900 tracking-wide">マネジメントの本質と「教える技術」</h3>
+          </div>
+          <p className="mb-8">
+            マネジメントとは、単なる管理ではなく<strong className="text-zinc-800 font-medium">「教えること」</strong>そのものです。そして「教える」という行為は、単なる知識の伝達ではなく、相手の成長と自立を促す一連のプロセスを指します。
+          </p>
+          <div className="grid md:grid-cols-2 gap-6 mb-10">
+            <div className="bg-zinc-50 p-8 rounded-2xl border border-zinc-100">
+              <h4 className="font-medium text-zinc-800 mb-3 text-sm tracking-widest">真のゴール</h4>
+              <p className="text-sm text-zinc-500">教えられた相手がメリットを語り、自分事として行動・成果を出すだけでなく、さらに<strong className="text-[#C5A059] font-medium">次の人にも再現して教えられるようになる所までを見届けること</strong>です。</p>
+            </div>
+            <div className="bg-zinc-50 p-8 rounded-2xl border border-zinc-100">
+              <h4 className="font-medium text-zinc-800 mb-3 text-sm tracking-widest">主体性の引き出し方</h4>
+              <p className="text-sm text-zinc-500">常に主語は「あなた（お相手）」。1 on 1等の場では相手に「仕切り（主導権）」を任せます。人間は自ら課題に直面し考えている時こそ最も成長します。</p>
+            </div>
+          </div>
+          <div className="pl-6 border-l-2 border-[#C5A059]/20 py-2">
+            <h4 className="font-medium text-zinc-800 mb-4 text-sm tracking-widest">実践マニュアル（2週間サイクル）</h4>
+            <div className="space-y-6 text-sm">
+              <div>
+                <strong className="text-[#C5A059] font-medium block mb-1">1週目（アクションプラン）：</strong> 
+                OGSMの全体像と任せる範囲を伝え、相手の言葉で説明し直してもらいます。「もし本気でやらなかったらどうなるか？」という最悪の未来を具体的にイメージさせます。
+              </div>
+              <div>
+                <strong className="text-[#C5A059] font-medium block mb-1">2週目（フォローアップ）：</strong> 
+                取り組み状況を相手の言葉で報告してもらい、ズレを修正します。できなかった部分は「どうしたらできるようになるか」を本人に明確にさせます。
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div className="flex items-center gap-4 mb-8">
+            <span className="text-sm font-medium text-[#C5A059] tracking-widest">02</span>
+            <h3 className="text-2xl font-medium text-zinc-900 tracking-wide">ヒーローズ・ジャーニー（神話の法則）</h3>
+          </div>
+          <p className="mb-8">
+            ヒーローズ・ジャーニーは、古今東西の神話やヒット映画に共通する<strong className="text-zinc-800 font-medium">「人種・世代・性別を問わず、あらゆる人々から深く共感されるストーリーの黄金則」</strong>です。
+          </p>
+          <div className="bg-zinc-50 p-8 rounded-2xl border border-zinc-100 mb-6">
+            <p className="text-sm text-zinc-500">
+              物語は、1.日常世界から始まり、2.冒険への誘い、3.冒険の拒否、4.賢者との出会い、5.戸口の通過、6.試練・仲間・敵、7.最も危険な場所への接近、8.最大の試練、9.報酬、10.帰路、11.復活、12.宝を持っての帰還、というプロセスを辿ります。
+            </p>
+          </div>
+          <p className="text-sm text-zinc-500">
+            ビジネスの本質は「問題解決」であり、この型を使うことで、顧客やメンバーが直面している課題（試練）をどう乗り越え、最高の未来（報酬）を手に入れるかという物語を、共感を生む形で提示できます。
+          </p>
+        </section>
+
+        <section>
+          <div className="flex items-center gap-4 mb-8">
+            <span className="text-sm font-medium text-[#C5A059] tracking-widest">03</span>
+            <h3 className="text-2xl font-medium text-zinc-900 tracking-wide">OGSM（戦略構築）</h3>
+          </div>
+          <p className="mb-10">
+            OGSMは、マーケティング、マネジメント、セールスなどあらゆるビジネスシーンに応用可能な万能のフレームワークです。
+          </p>
+          <div className="space-y-6">
+            <div className="flex gap-6">
+              <div className="text-3xl font-light text-[#C5A059] w-8">O</div>
+              <div className="pb-6 border-b border-zinc-100 flex-grow">
+                <h4 className="text-zinc-800 font-medium mb-2">Objective <span className="text-zinc-400 text-sm ml-2">目的</span></h4>
+                <p className="text-sm text-zinc-500">「ビフォー（悩み・課題）」から「アフター（最高の未来）」への変化を言語化したものです。ヒーローズ・ジャーニーの「日常世界」から「報酬」への旅路に相当します。</p>
+              </div>
+            </div>
+            <div className="flex gap-6">
+              <div className="text-3xl font-light text-[#C5A059] w-8">G</div>
+              <div className="pb-6 border-b border-zinc-100 flex-grow">
+                <h4 className="text-zinc-800 font-medium mb-2">Goal <span className="text-zinc-400 text-sm ml-2">目標</span></h4>
+                <p className="text-sm text-zinc-500">最高の未来を数値化したものです。「数字で表せないものは仕事ではない（ただの作業）」であり、数値化することで初めて改善が可能になります。</p>
+              </div>
+            </div>
+            <div className="flex gap-6">
+              <div className="text-3xl font-light text-[#C5A059] w-8">S</div>
+              <div className="pb-6 border-b border-zinc-100 flex-grow">
+                <h4 className="text-zinc-800 font-medium mb-2">Strategy <span className="text-zinc-400 text-sm ml-2">戦略</span></h4>
+                <p className="text-sm text-zinc-500">課題を解決し、最高の未来へ到達するための「解決策（必殺技）」です。リソースの選択と集中を意味します。</p>
+              </div>
+            </div>
+            <div className="flex gap-6">
+              <div className="text-3xl font-light text-[#C5A059] w-8">M</div>
+              <div className="pb-6 flex-grow">
+                <h4 className="text-zinc-800 font-medium mb-2">Measurement <span className="text-zinc-400 text-sm ml-2">評価基準</span></h4>
+                <p className="text-sm text-zinc-500">戦略の正しさを測るためのマイルストーン（KPI）や根拠です。客観的な指標に基づき、逆算して設定します。</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-20">
+          <Card className="p-10 md:p-14 text-center border-none bg-zinc-50 shadow-none">
+            <Hexagon className="w-8 h-8 text-[#C5A059] mx-auto mb-6 opacity-80 stroke-[1.5]" />
+            <h3 className="text-xl font-medium text-zinc-800 mb-6 tracking-widest">三要素の統合</h3>
+            <p className="text-sm md:text-base leading-loose text-zinc-500">
+              このシステムの中核は、「ヒーローズ・ジャーニーという論理的な物語の型」を「OGSMという実務的なフレームワーク」に落とし込み、「教える技術」を通じてチームメンバーをその物語の主人公（主体）に仕立て上げることにあります。<br/><br/>
+              メンバーが自身の業務を「最高の未来を目指す冒険」として捉え、自らOGSMを運用し、さらにそれを次のメンバーに教えられるようになったとき、チームビルディングは真の成功を収めます。
+            </p>
+          </Card>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function TrialView({ navigateTo, setOgsmData }) {
+  const WORD_BANK = [
+    "問題解決", "賢者", "自分事化", "最高の未来", "数値化", 
+    "戦略", "再現", "最悪の未来", "主体", "マイルストーン"
+  ];
+  const CORRECT_ANSWERS = {
+    q1: "問題解決", q2: "賢者", q3: "再現", q4: "最高の未来", q5: "数値化", 
+    q6: "戦略", q7: "最悪の未来", q8: "自分事化", q9: "マイルストーン", q10: "主体"
+  };
+  const EXPLANATIONS = {
+    q1: "① 問題解決：ビジネスの本質は、お相手の抱える問題を解決することです。",
+    q2: "② 賢者：ヒーローズ・ジャーニーのステップ4に登場する、主人公に知恵を授けるメンターです。",
+    q3: "③ 再現：教えられた人が、次の人に再現して教えられるまで見届けるのが「教える」の定義です。",
+    q4: "最高の未来：悩み（ビフォー）の対極にある、理想のアフターです。",
+    q5: "⑤ 数値化：改善を図り、成果を出すためには数値化が不可欠です。",
+    q6: "⑥ 戦略：課題を克服し、目的へ到達するための具体的な必殺技です。",
+    q7: "⑦ 最悪の未来：これを具体的にイメージさせることで、取り組みの重要性をチューニングします。",
+    q8: "⑧ 自分事化：相手が主体（主役）になることで、初めて人間は本当の成長を遂げます。",
+    q9: "⑨ マイルストーン：山頂（ゴール）に向かうための通過点としての数字です。",
+    q10: "⑩ 主体：常に「お相手（あなた）」が主体であることを忘れてはなりません。"
+  };
+
+  const [answers, setAnswers] = useState({});
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isPerfect, setIsPerfect] = useState(false);
+
+  const [draftO, setDraftO] = useState("");
+  const [draftG, setDraftG] = useState("");
+
+  const handleSelect = (id, value) => {
+    setAnswers(prev => ({ ...prev, [id]: value }));
+  };
+
+  const checkAnswers = () => {
+    setIsSubmitted(true);
+    const allCorrect = Object.keys(CORRECT_ANSWERS).every(
+      key => answers[key] === CORRECT_ANSWERS[key]
+    );
+    setIsPerfect(allCorrect);
+  };
+
+  const saveDraftToOGSM = () => {
+    setOgsmData(prev => ({
+      ...prev,
+      objective: draftO || prev.objective,
+      goal: draftG || prev.goal
+    }));
+    navigateTo('ogsm');
+  };
+
+  const BlankSelect = ({ id }) => {
+    const isCorrect = isSubmitted && answers[id] === CORRECT_ANSWERS[id];
+    const isWrong = isSubmitted && answers[id] !== CORRECT_ANSWERS[id];
+    
+    let selectClass = "mx-1 inline-block bg-zinc-50 text-[#C5A059] rounded-full px-4 py-1 text-sm md:text-base cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#C5A059] transition-colors border border-zinc-200 appearance-none text-center min-w-[120px] font-medium shadow-sm";
+    
+    if (isCorrect) selectClass = "mx-1 inline-block bg-zinc-100 text-zinc-400 rounded-full px-4 py-1 border border-zinc-200 appearance-none text-center min-w-[120px] font-medium opacity-70";
+    if (isWrong) selectClass = "mx-1 inline-block bg-rose-50 text-rose-500 rounded-full px-4 py-1 border border-rose-200 appearance-none text-center min-w-[120px] font-medium";
+
+    return (
+      <div className="inline-block relative align-middle">
+        <select 
+          className={selectClass}
+          value={answers[id] || ""}
+          onChange={(e) => handleSelect(id, e.target.value)}
+          disabled={isSubmitted && isPerfect}
+        >
+          <option value="" disabled>空欄 {id.replace('q','')}</option>
+          {WORD_BANK.map(word => (
+            <option key={word} value={word}>{word}</option>
+          ))}
+        </select>
+        <ChevronDown className="w-3 h-3 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none opacity-40 text-current" />
+      </div>
+    );
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto animate-in fade-in duration-1000 space-y-12">
+      <div className="text-center pb-10 border-b border-zinc-200">
+        <h2 className="text-3xl md:text-4xl font-light text-zinc-900 tracking-widest mb-4">
+          賢者の試練
+        </h2>
+        <p className="text-zinc-400 text-sm tracking-widest uppercase">Story & Trial</p>
+      </div>
+
+      <div className="flex flex-wrap gap-3 justify-center p-6 bg-white rounded-3xl border border-zinc-200/60 shadow-sm">
+        {WORD_BANK.map(word => (
+          <span key={word} className="text-xs tracking-wider bg-zinc-50 text-zinc-500 px-4 py-2 rounded-full border border-zinc-100">
+            {word}
+          </span>
+        ))}
+      </div>
+
+      <div className="space-y-16 text-lg md:text-xl leading-[2.2] text-zinc-600 font-light px-4">
+        <div>
+          <h3 className="text-sm font-medium text-[#C5A059] tracking-widest uppercase mb-4">Chapter 1</h3>
+          <p>
+            君は今、ビジネスという名の広大な未開の地を旅する「主人公」だ。この地での君の使命は、目の前の困難を突破する <BlankSelect id="q1" /> である。そして、君の傍らに立つマネージャー（上司）の役割は、物語における <BlankSelect id="q2" /> 、すなわち旅の導き手だ。<br/>
+            賢者としての私の仕事は、単に知識を与えることではない。私のマネジメントの真意は「教える」ことであり、そのゴールは、君が自ら考え、成果を出し、さらにその技術を次の旅人へと <BlankSelect id="q3" /> して教えられる状態にすることなのだ。
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-medium text-[#C5A059] tracking-widest uppercase mb-4">Chapter 2</h3>
+          <p>
+            この旅を成功させるには、OGSMという地図が必要だ。まず、地図の目的地である「O（目的）」を決めよう。これは、君がいま抱えている悩み（ビフォー）を打破した先の <BlankSelect id="q4" /> を言語化したものだ。<br/>
+            目的地が決まったら、次はその距離を <BlankSelect id="q5" /> しなければならない。なぜなら、数字で表せないものは仕事ではなく「ただの作業」であり、数字がなければ旅の進捗を改善できないからだ。
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-medium text-[#C5A059] tracking-widest uppercase mb-4">Chapter 3</h3>
+          <p>
+            旅の途中には必ず、君の行く手を阻む「最大の試練」が待ち受けている。その壁を打ち破るための具体的な解決策（必殺技）こそが <BlankSelect id="q6" /> である。<br/>
+            さらに、私は君に一つの問いを投げかける。「もし、この挑戦を本気でやらなかったら、どんな <BlankSelect id="q7" /> が待っていますか？」。この問いに答えることで、君はこの旅を他人事ではなく <BlankSelect id="q8" /> し、真のリーダーへと成長していくのだ。
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-medium text-[#C5A059] tracking-widest uppercase mb-4">Chapter 4</h3>
+          <p>
+            道中には、現在の立ち位置を確認するための <BlankSelect id="q9" /> （KPI）という道標を置いていこう。そして忘れないでほしい。この物語の <BlankSelect id="q10" /> は、常に「あなた（君）」なのだ。<br/>
+            君が宝を手にして帰還し、次の仲間にその知恵を授けるとき、私の「教える」という任務は初めて完結する。
+          </p>
+        </div>
+      </div>
+
+      {!isPerfect && (
+        <div className="flex justify-center pt-8">
+          <Button onClick={checkAnswers} disabled={Object.keys(answers).length < 10} className="w-full md:w-auto">
+            判定する
+          </Button>
+        </div>
+      )}
+
+      {isSubmitted && !isPerfect && (
+        <div className="p-4 bg-rose-50 border border-rose-100 rounded-full text-center text-rose-500 text-sm animate-in fade-in">
+          まだ空欄が違っているようだ。もう一度よく考えて修正してくれたまえ。
+        </div>
+      )}
+
+      {isPerfect && (
+        <div className="space-y-8 animate-in slide-in-from-bottom-8 duration-1000 pt-12">
+          
+          <Card className="p-8 md:p-12 border-zinc-200">
+            <h3 className="text-2xl font-light text-zinc-900 mb-8 text-center tracking-wider">見事だ、試練はクリアされた。</h3>
+            <div className="bg-zinc-50 p-8 rounded-2xl border border-zinc-100">
+              <h4 className="font-medium text-[#C5A059] mb-6 tracking-widest text-xs uppercase text-center">賢者の解説録</h4>
+              <ul className="space-y-4 text-sm text-zinc-500 font-light">
+                {Object.values(EXPLANATIONS).map((exp, i) => (
+                  <li key={i}>{exp}</li>
+                ))}
+              </ul>
+            </div>
+          </Card>
+
+          <Card className="p-8 md:p-12 border-[#C5A059]/20">
+            <h3 className="text-xl font-medium text-zinc-900 mb-8 text-center tracking-wider">
+              次なるアクション：冒険の地図を描く
+            </h3>
+            
+            <div className="space-y-10">
+              <div>
+                <h4 className="font-medium text-[#C5A059] mb-3 text-sm tracking-widest uppercase">Action 1. 仕切りの譲渡</h4>
+                <p className="text-zinc-500 text-sm mb-4 font-light">
+                  「主体」はあなたです。次回のミーティング（または1 on 1）の司会やアジェンダは、あなたが設定してください。
+                </p>
+                <button className="px-5 py-2.5 bg-white border border-zinc-200 shadow-sm rounded-full text-sm text-zinc-600 hover:bg-zinc-50 transition-colors flex items-center justify-center gap-2 w-full md:w-auto">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" /> 司会を任されることを承諾する
+                </button>
+              </div>
+
+              <div className="pt-8 border-t border-zinc-100">
+                <h4 className="font-medium text-[#C5A059] mb-3 text-sm tracking-widest uppercase">Action 2. OGSMへの転記</h4>
+                <p className="text-zinc-500 text-sm mb-6 font-light">
+                  理論を実践に移しましょう。あなたの抱える課題を突破した「最高の未来(O)」と「数値化(G)」をここで宣言し、地図に書き写します。
+                </p>
+                
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-400 mb-2 tracking-widest uppercase">Objective (目的)</label>
+                    <input 
+                      type="text" 
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-4 text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-[#C5A059]/50 transition-colors font-light text-sm"
+                      placeholder="例：チーム全員が自立し、売上が目標の120%を達成している状態"
+                      value={draftO}
+                      onChange={(e) => setDraftO(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-400 mb-2 tracking-widest uppercase">Goal (目標)</label>
+                    <input 
+                      type="text" 
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-4 text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-[#C5A059]/50 transition-colors font-light text-sm"
+                      placeholder="例：2026年度末までに月間売上1000万円、残業時間ゼロ"
+                      value={draftG}
+                      onChange={(e) => setDraftG(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <Button onClick={saveDraftToOGSM} className="mt-8 w-full">
+                  OGSMボードへ転記する
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OGSMBoardView({ ogsmData, setOgsmData }) {
+  const [isEditing, setIsEditing] = useState(true);
+
+  const handleChange = (field, value) => {
+    setOgsmData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const fields = [
+    { id: 'objective', label: 'Objective', sub: '目的', desc: '私たちは何のために存在し、何を成し遂げたいのか？定性的な大きな方向性。', placeholder: '例：業界で最も顧客に愛されるサービスになる' },
+    { id: 'goal', label: 'Goal', sub: '目標', desc: '目的を達成したと判断するための、定量的なゴール。', placeholder: '例：2026年までに顧客満足度95%、ユーザー数1万人達成' },
+    { id: 'strategy', label: 'Strategy', sub: '戦略', desc: '目標を達成するための、リソース（ヒト・モノ・カネ）の選択と集中。', placeholder: '例：カスタマーサクセス部門の強化と、既存顧客からの紹介プログラムの構築' },
+    { id: 'measure', label: 'Measurement', sub: '評価基準', desc: '戦略が実行されているか測るための指標とアクションプラン。', placeholder: '例：週次の顧客面談数20件、NPSスコアの毎月測定' },
+  ];
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in duration-1000">
+      <div className="text-center pb-10 border-b border-zinc-200 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="text-left">
+          <h2 className="text-3xl md:text-4xl font-light text-zinc-900 tracking-widest mb-2">
+            OGSMボード
+          </h2>
+          <p className="text-zinc-400 text-sm tracking-widest uppercase">Framework</p>
+        </div>
+        <Button 
+          variant={isEditing ? "primary" : "secondary"} 
+          onClick={() => setIsEditing(!isEditing)}
+        >
+          {isEditing ? '保存して共有モードへ' : '編集する'}
+        </Button>
+      </div>
+
+      <div className="space-y-6">
+        {fields.map((field) => (
+          <Card key={field.id} className="relative group">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#C5A059]/40 rounded-l-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            
+            <div className="p-8 md:p-10 flex flex-col md:flex-row gap-8">
+              <div className="w-full md:w-1/3 shrink-0">
+                <h3 className="text-2xl font-light text-zinc-900 tracking-wide mb-1">
+                  {field.label.charAt(0)}<span className="text-lg text-zinc-400">{field.label.slice(1)}</span>
+                </h3>
+                <p className="text-[#C5A059] text-xs tracking-widest uppercase mb-4">{field.sub}</p>
+                <p className="text-xs text-zinc-500 leading-relaxed font-light pr-4">{field.desc}</p>
+              </div>
+
+              <div className="w-full md:w-2/3">
+                {isEditing ? (
+                  <textarea
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl p-6 text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-[#C5A059]/50 focus:ring-1 focus:ring-[#C5A059]/30 transition-colors resize-y min-h-[140px] font-light text-sm md:text-base shadow-inner"
+                    placeholder={field.placeholder}
+                    value={ogsmData[field.id]}
+                    onChange={(e) => handleChange(field.id, e.target.value)}
+                  />
+                ) : (
+                  <div className="p-6 min-h-[140px]">
+                    {ogsmData[field.id] ? (
+                      <p className="text-zinc-700 whitespace-pre-wrap leading-loose font-light">{ogsmData[field.id]}</p>
+                    ) : (
+                      <p className="text-zinc-400 italic font-light text-sm">未入力</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function QuizView() {
+  const [currentQIndex, setCurrentQIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [isAnswered, setIsAnswered] = useState(false);
+  const [score, setScore] = useState(0);
+  const [showResult, setShowResult] = useState(false);
+
+  const question = QUIZ_QUESTIONS[currentQIndex];
+
+  const handleSelect = (index) => {
+    if (isAnswered) return;
+    setSelectedAnswer(index);
+    setIsAnswered(true);
+    if (index === question.correctAnswer) {
+      setScore(score + 1);
+    }
+  };
+
+  const nextQuestion = () => {
+    if (currentQIndex < QUIZ_QUESTIONS.length - 1) {
+      setCurrentQIndex(currentQIndex + 1);
+      setSelectedAnswer(null);
+      setIsAnswered(false);
+    } else {
+      setShowResult(true);
+    }
+  };
+
+  const resetQuiz = () => {
+    setCurrentQIndex(0);
+    setSelectedAnswer(null);
+    setIsAnswered(false);
+    setScore(0);
+    setShowResult(false);
+  };
+
+  if (showResult) {
+    return (
+      <div className="max-w-2xl mx-auto animate-in zoom-in-95 duration-1000">
+        <Card className="p-16 text-center border-none bg-white shadow-[0_8px_40px_rgb(0,0,0,0.06)]">
+          <p className="text-[#C5A059] text-sm tracking-widest uppercase mb-4">Result</p>
+          <h2 className="text-4xl font-light text-zinc-900 mb-12 tracking-widest">クイズ完了</h2>
+          
+          <div className="text-[6rem] leading-none font-light text-zinc-900 mb-12">
+            {score}<span className="text-3xl text-zinc-300 mx-2">/</span><span className="text-4xl text-zinc-400">{QUIZ_QUESTIONS.length}</span>
+          </div>
+
+          <p className="text-zinc-500 mb-12 leading-loose text-sm font-light max-w-md mx-auto">
+            {score === QUIZ_QUESTIONS.length 
+              ? "完璧です。マネジメントの核となる考え方を完全に理解しています。この知識をチームビルディングに活かしましょう。" 
+              : "マネジメントの基礎を学ぶ良い機会です。日々の業務の中で、これらの考え方を意識してみてください。"}
+          </p>
+
+          <Button onClick={resetQuiz} variant="outline" className="mx-auto">
+            もう一度挑戦する
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto animate-in fade-in duration-1000">
+      <div className="text-center pb-10 border-b border-zinc-200 mb-10">
+        <h2 className="text-3xl md:text-4xl font-light text-zinc-900 tracking-widest mb-4">
+          マネジメントクイズ
+        </h2>
+        <div className="flex items-center justify-center gap-4">
+          <p className="text-zinc-400 text-sm tracking-widest uppercase">Question</p>
+          <span className="text-[#C5A059] font-medium tracking-wider">{currentQIndex + 1} / {QUIZ_QUESTIONS.length}</span>
+        </div>
+      </div>
+
+      <div className="mb-12">
+        <h3 className="text-xl md:text-2xl font-light text-zinc-800 leading-[1.8] tracking-wide text-center">
+          {question.question}
+        </h3>
+      </div>
+
+      <div className="space-y-4 mb-12">
+        {question.options.map((opt, index) => {
+          let btnClass = "w-full text-left p-6 rounded-2xl border transition-all duration-500 font-light text-sm md:text-base leading-relaxed ";
+          
+          if (!isAnswered) {
+            btnClass += "border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 text-zinc-600 hover:text-zinc-900 shadow-sm";
+          } else {
+            if (index === question.correctAnswer) {
+              btnClass += "border-emerald-200 bg-emerald-50 text-emerald-700 font-medium shadow-sm";
+            } else if (index === selectedAnswer) {
+              btnClass += "border-rose-200 bg-rose-50 text-rose-600";
+            } else {
+              btnClass += "border-zinc-100 bg-zinc-50 text-zinc-400 opacity-50";
+            }
+          }
+
+          return (
+            <button
+              key={index}
+              onClick={() => handleSelect(index)}
+              disabled={isAnswered}
+              className={btnClass}
+            >
+              <div className="flex items-center justify-between gap-6">
+                <span>{opt}</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {isAnswered && (
+        <div className="animate-in slide-in-from-bottom-8 duration-700">
+          <Card className="p-8 border-zinc-200">
+            <h4 className={`text-sm font-medium tracking-widest uppercase mb-4 ${selectedAnswer === question.correctAnswer ? 'text-emerald-600' : 'text-rose-500'}`}>
+              {selectedAnswer === question.correctAnswer ? "Correct" : "Incorrect"}
+            </h4>
+            <p className="text-zinc-600 font-light leading-loose text-sm md:text-base mb-8">
+              {question.explanation}
+            </p>
+            <div className="flex justify-end">
+              <Button onClick={nextQuestion}>
+                {currentQIndex < QUIZ_QUESTIONS.length - 1 ? "次の問題へ" : "結果を見る"}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function JourneyGameView() {
+  const [items, setItems] = useState([]);
+  const [isStarted, setIsStarted] = useState(false);
+  const [isChecked, setIsChecked] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+
+  useEffect(() => {
+    setItems(shuffleArray(JOURNEY_STEPS));
+  }, []);
+
+  const moveItem = (index, direction) => {
+    if (isChecked) return;
+    const newItems = [...items];
+    if (direction === 'up' && index > 0) {
+      [newItems[index - 1], newItems[index]] = [newItems[index], newItems[index - 1]];
+    } else if (direction === 'down' && index < newItems.length - 1) {
+      [newItems[index + 1], newItems[index]] = [newItems[index], newItems[index + 1]];
+    }
+    setItems(newItems);
+  };
+
+  const checkOrder = () => {
+    const correct = items.every((item, index) => item.id === index + 1);
+    setIsCorrect(correct);
+    setIsChecked(true);
+  };
+
+  const retry = () => {
+    setIsChecked(false);
+    setIsCorrect(false);
+    setItems(shuffleArray(JOURNEY_STEPS));
+  };
+
+  if (!isStarted) {
+    return (
+      <div className="max-w-3xl mx-auto text-center animate-in zoom-in-95 duration-1000 py-16">
+        <h2 className="text-3xl md:text-4xl font-light text-zinc-900 mb-4 tracking-widest">
+          ヒーローズ・ジャーニー
+        </h2>
+        <p className="text-[#C5A059] text-sm tracking-widest uppercase mb-12">12 Steps</p>
+        <p className="text-zinc-500 text-sm md:text-base mb-16 leading-loose max-w-xl mx-auto font-light">
+          バラバラになった12のプロセスを正しい順番に並べ替え、物語の構造を体感して学びましょう。
+        </p>
+        <Button onClick={() => setIsStarted(true)} variant="outline" className="mx-auto px-10 bg-white">
+          ワークを開始する
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto animate-in fade-in duration-1000">
+      <div className="text-center pb-8 border-b border-zinc-200 mb-10">
+        <h2 className="text-2xl font-light text-zinc-900 tracking-widest mb-2">
+          並べ替えワーク
+        </h2>
+        <p className="text-zinc-400 text-xs tracking-widest uppercase">Order the 12 steps</p>
+      </div>
+
+      <div className="flex justify-end mb-8">
+        {isChecked && !isCorrect && (
+           <Button variant="outline" onClick={retry} className="text-sm px-4 py-2 bg-white">
+             やり直す
+           </Button>
+        )}
+        {!isChecked && (
+          <Button onClick={checkOrder} className="text-sm px-6 py-2">
+            判定する
+          </Button>
+        )}
+      </div>
+
+      {isChecked && (
+        <div className="mb-10 text-center animate-in fade-in">
+          <h3 className={`text-lg font-medium tracking-widest uppercase mb-4 ${isCorrect ? 'text-[#C5A059]' : 'text-rose-500'}`}>
+            {isCorrect ? "Perfect" : "Incorrect"}
+          </h3>
+          <p className="text-zinc-500 font-light text-sm">
+            {isCorrect 
+              ? "見事です。この12のステップを意識して組織のビジョンを語ることで、メンバーを巻き込む強力なマネジメントが可能になります。"
+              : "順番が違う部分があります。物語の大きな流れを意識してみましょう。"}
+          </p>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {items.map((item, index) => {
+          let itemStyle = "bg-white border-zinc-200 shadow-sm";
+          let numStyle = "text-zinc-300";
+          
+          if (isChecked) {
+            if (item.id === index + 1) {
+              itemStyle = "bg-[#C5A059]/5 border-[#C5A059]/30";
+              numStyle = "text-[#C5A059]";
+            } else {
+              itemStyle = "bg-rose-50 border-rose-200";
+              numStyle = "text-rose-400";
+            }
+          }
+
+          return (
+            <div 
+              key={item.id} 
+              className={`flex items-center gap-6 p-4 rounded-2xl border transition-all duration-500 hover:border-zinc-300 ${itemStyle}`}
+            >
+              {!isChecked && (
+                <div className="flex flex-col gap-1 shrink-0">
+                  <button 
+                    onClick={() => moveItem(index, 'up')}
+                    disabled={index === 0}
+                    className="text-zinc-400 hover:text-[#C5A059] disabled:opacity-20 transition-colors"
+                  >
+                    <ChevronUp className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={() => moveItem(index, 'down')}
+                    disabled={index === items.length - 1}
+                    className="text-zinc-400 hover:text-[#C5A059] disabled:opacity-20 transition-colors"
+                  >
+                    <ChevronDown className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+
+              <div className={`w-8 text-center font-light text-sm tracking-widest transition-colors ${numStyle}`}>
+                {isChecked ? (item.id < 10 ? `0${item.id}` : item.id) : (index + 1 < 10 ? `0${index + 1}` : index + 1)}
+              </div>
+
+              <div className="flex-grow pl-4 border-l border-zinc-100">
+                <h4 className="text-sm font-medium text-zinc-800 mb-1 tracking-wide">{item.text}</h4>
+                <p className="text-xs text-zinc-500 font-light">{item.desc}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
